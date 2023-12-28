@@ -57,6 +57,7 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
   sprint("handle_page_fault: %lx\n", stval);
   switch (mcause) {
     case CAUSE_STORE_PAGE_FAULT:
+    {
       // TODO (lab2_3): implement the operations that solve the page fault to
       // dynamically increase application stack.
       // hint: first allocate a new physical page, and then, maps the new page to the
@@ -64,7 +65,16 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       // panic( "You need to implement the operations that actually handle the page fault in lab2_3.\n" );
       // int map_pages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm);
       //map_pages(current->pagetable,ROUNDDOWN)
-      map_pages(current->pagetable, ROUNDDOWN(stval,PGSIZE), PGSIZE, (uint64)alloc_page(),prot_to_type(PROT_READ|PROT_WRITE,1));
+      //map_pages(current->pagetable, ROUNDDOWN(stval,PGSIZE), PGSIZE, (uint64)alloc_page(),prot_to_type(PROT_READ|PROT_WRITE,1));
+
+      // Added @lab2_challenge1
+      // 我们将判断缺页异常的原因，从而使用不同的方式解决
+      uint64 stackp = current->trapframe->regs.sp;
+      if (stval - stackp < 32){
+        user_vm_map(current->pagetable, stval / PGSIZE * PGSIZE, PGSIZE, (uint64)alloc_page(), prot_to_type(PROT_READ|PROT_WRITE,1));
+      }
+      else panic("this address is not available!");
+    }
       break;
     default:
       sprint("unknown page fault.\n");
