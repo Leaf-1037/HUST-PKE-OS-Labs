@@ -8,3 +8,6 @@ void* naive_malloc();
 void naive_free(void* va);
 int fork();
 void yield();
+
+// Added @lab3_challenge1
+int wait(int pid);

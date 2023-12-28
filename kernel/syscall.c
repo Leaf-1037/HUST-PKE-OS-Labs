@@ -101,6 +101,35 @@ ssize_t sys_user_yield() {
   return 0;
 }
 
+
+// added @lab3_challenge1
+extern process* ready_queue_head;
+
+bool get_pid_ready_queue(int pid){
+  for (process* p = ready_queue_head;p->queue_next != NULL; p=p->queue_next){
+    if (p->pid == pid) return TRUE;
+  }
+  return FALSE;
+}
+
+// added @lab3_challenge1
+ssize_t sys_user_wait(int pid){
+  if (pid == -1){
+    // 等待任一子进程退出，进入调度
+    current->status = BLOCKED;
+    schedule();
+    return 0;
+  }
+  if (pid > 0){
+    if (get_pid_ready_queue(pid)){
+      current->status = BLOCKED;
+      schedule();
+      return 0;
+    }
+  }
+  return 0;
+}
+
 //
 // [a0]: the syscall number; [a1] ... [a7]: arguments to the syscalls.
 // returns the code of success, (e.g., 0 means success, fail for otherwise)
@@ -120,6 +149,8 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
       return sys_user_fork();
     case SYS_user_yield:
       return sys_user_yield();
+    case SYS_user_wait:
+      return sys_user_wait(a1);
     default:
       panic("Unknown syscall %ld \n", a0);
   }
