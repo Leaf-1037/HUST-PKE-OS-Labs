@@ -106,9 +106,11 @@ ssize_t sys_user_yield() {
 extern process* ready_queue_head;
 
 bool get_pid_ready_queue(int pid){
-  for (process* p = ready_queue_head;p->queue_next != NULL; p=p->queue_next){
+  process *p;
+  for ( p = ready_queue_head;p->queue_next != NULL; p=p->queue_next){
     if (p->pid == pid) return TRUE;
   }
+  if (p->pid == pid) return TRUE;
   return FALSE;
 }
 
@@ -118,9 +120,8 @@ ssize_t sys_user_wait(int pid){
     // 等待任一子进程退出，进入调度
     current->status = BLOCKED;
     schedule();
-    return 0;
   }
-  if (pid > 0){
+  if (pid < NPROC){
     if (get_pid_ready_queue(pid)){
       current->status = BLOCKED;
       schedule();
@@ -149,6 +150,7 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
       return sys_user_fork();
     case SYS_user_yield:
       return sys_user_yield();
+    // added @lab3_challenge1
     case SYS_user_wait:
       return sys_user_wait(a1);
     default:

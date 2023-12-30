@@ -165,6 +165,13 @@ int free_process( process* proc ) {
   // as it is different from regular OS, which needs to run 7x24.
   proc->status = ZOMBIE;
 
+  // # Challenge (lab3_challenge1) TODO
+  // * 如果父进程存在且被阻塞，则将父进程“唤醒”加入就绪队列
+  if (proc->parent != NULL && proc->parent->status == BLOCKED) {
+    proc->parent->status = READY;
+    insert_to_ready_queue(proc->parent);
+  }
+
   return 0;
 }
 
@@ -243,6 +250,23 @@ int do_fork( process* parent)
         child->mapped_info[child->total_mapped_region].npages =
           parent->mapped_info[i].npages;
         child->mapped_info[child->total_mapped_region].seg_type = CODE_SEGMENT;
+        child->total_mapped_region++;
+        break;
+
+      case DATA_SEGMENT:
+        // added @lab3_challenge1
+        for (int j = 0; j < parent->mapped_info[i].npages; j++) {
+          uint64 pa_of_mapped_va = lookup_pa(parent->pagetable, parent->mapped_info[i].va + j * PGSIZE);
+          void *new_addr = alloc_page();
+          memcpy(new_addr, (void *) pa_of_mapped_va, PGSIZE);
+          map_pages(child->pagetable, parent->mapped_info[i].va + j * PGSIZE, PGSIZE, (uint64) new_addr, prot_to_type(PROT_READ | PROT_WRITE, 1));// * 权限为可读、可写
+        }
+
+        // after mapping, register the vm region (do not delete codes below!)
+        child->mapped_info[child->total_mapped_region].va = parent->mapped_info[i].va;
+        child->mapped_info[child->total_mapped_region].npages =
+          parent->mapped_info[i].npages;
+        child->mapped_info[child->total_mapped_region].seg_type = DATA_SEGMENT;
         child->total_mapped_region++;
         break;
     }
