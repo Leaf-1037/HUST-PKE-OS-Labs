@@ -9,6 +9,7 @@
 #include "util/types.h"
 #include "util/snprintf.h"
 #include "kernel/syscall.h"
+#include <string.h>
 
 uint64 do_user_call(uint64 sysnum, uint64 a1, uint64 a2, uint64 a3, uint64 a4, uint64 a5, uint64 a6,
                  uint64 a7) {
@@ -81,6 +82,61 @@ void yield() {
 // lib call to open
 //
 int open(const char *pathname, int flags) {
+  // added @lab4_challenge1
+
+  char current_path[MAX_PATH_LEN];
+
+  read_cwd(current_path);
+
+  // 对相对路径实现支持
+  char* dir_data = (char*)pathname;
+  char dir[MAX_PATH_LEN];
+  memset(dir,0x0,MAX_PATH_LEN);
+  memcpy(dir, current_path, strlen(current_path));
+  // 支持相对路径
+  if (dir_data[0]=='.'){
+    if (dir_data[1] == '.'){
+      // 上级目录 ..
+      int path_len = strlen(dir);
+      // 回溯至上一级
+      for (int i = path_len-1;i>=0;--i){
+        if (dir[i] == '/'){
+          dir[i] = 0;
+          break;
+        }
+        dir[i] = 0;
+      }
+      path_len = strlen(dir);
+      // 对根目录的情形特殊讨论
+      if (path_len == 0){
+        // 令 dir = "/"
+        dir[1] = 0;
+        dir[0] = '/';
+      }
+    }
+    int OFFSET = 0;
+    if (strlen(dir)==1){
+      OFFSET = 1;
+    }
+    // cat directory
+    int ptr_start_dir = 0;
+    // 找以'/'开头的串
+    for (int i = 0;i<strlen(dir_data);++i){
+      if (dir_data[i] == '/'){
+        ptr_start_dir =  i; break;
+      }
+    }
+    if (ptr_start_dir != 0){
+      int lenn= strlen(dir);
+      for (int i = ptr_start_dir + OFFSET;i<strlen(dir_data);++i){
+        dir[lenn++] = dir_data[i];
+      }
+    }
+    memset(current_path, 0x0, MAX_PATH_LEN);
+    memcpy(current_path, dir,sizeof(dir));
+    return do_user_call(SYS_user_open, (uint64)current_path, flags, 0, 0, 0, 0, 0);
+  }
+
   return do_user_call(SYS_user_open, (uint64)pathname, flags, 0, 0, 0, 0, 0);
 }
 

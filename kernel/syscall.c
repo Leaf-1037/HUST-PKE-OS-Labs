@@ -220,6 +220,76 @@ ssize_t sys_user_unlink(char * vfn){
   return do_unlink(pfn);
 }
 
+// added @lab4_challenge1
+ssize_t sys_user_rcwd(uint64 path){
+  // 先将用户态va转换为用户态pa
+  uint64 pa = (uint64)user_va_to_pa((pagetable_t)(current->pagetable), (void*)path);
+  // 将用户态文件名导入物理地址
+  memcpy((char*)pa, current->pfiles->cwd->name, sizeof(current->pfiles->cwd->name));
+  return 0;
+}
+
+// added @lab4_challenge1
+ssize_t sys_user_ccwd(uint64 path){
+  // 转化用户态pa
+  uint64 pa = (uint64)user_va_to_pa((pagetable_t)(current->pagetable), (void*)path);
+  char* dir_data = (char*)pa;
+  char dir[MAX_PATH_LEN];
+  memset(dir,0x0,MAX_PATH_LEN);
+  memcpy(dir, current->pfiles->cwd->name, strlen(current->pfiles->cwd->name));
+  // 支持相对路径
+  if (dir_data[0]=='.'){
+    if (dir_data[1] == '.'){
+      // 上级目录 ..
+      int path_len = strlen(dir);
+      // 回溯至上一级
+      for (int i = path_len-1;i>=0;--i){
+        if (dir[i] == '/'){
+          dir[i] = 0;
+          break;
+        }
+        dir[i] = 0;
+      }
+      path_len = strlen(dir);
+      // 对根目录的情形特殊讨论
+      if (path_len == 0){
+        // 令 dir = "/"
+        dir[1] = 0;
+        dir[0] = '/';
+      }
+    }
+    int OFFSET = 0;
+    if (strlen(dir)==1){
+      OFFSET = 1;
+    }
+    // cat directory
+    int ptr_start_dir = 0;
+    // 找以'/'开头的串
+    for (int i = 0;i<strlen(dir_data);++i){
+      if (dir_data[i] == '/'){
+        ptr_start_dir =  i; break;
+      }
+    }
+    if (ptr_start_dir != 0){
+      int lenn= strlen(dir);
+      for (int i = ptr_start_dir + OFFSET;i<strlen(dir_data);++i){
+        dir[lenn++] = dir_data[i];
+      }
+    }
+    memset(current->pfiles->cwd->name, 0x0, MAX_PATH_LEN);
+    memcpy(current->pfiles->cwd->name, dir,sizeof(dir));
+    update_file_status_when_ccwd();
+    return 0;
+  }
+  else if (dir_data[0] == '/'){
+    // that is the case '/^data/print.o'
+    memcpy(current->pfiles->cwd->name, dir_data, sizeof(dir_data));
+    update_file_status_when_ccwd();
+    return 0;
+  }
+  return 0;
+}
+
 //
 // [a0]: the syscall number; [a1] ... [a7]: arguments to the syscalls.
 // returns the code of success, (e.g., 0 means success, fail for otherwise)
@@ -268,6 +338,11 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
       return sys_user_link((char *)a1, (char *)a2);
     case SYS_user_unlink:
       return sys_user_unlink((char *)a1);
+    // added @lab4_challenge1
+    case SYS_user_rcwd:
+      return sys_user_rcwd((uint64 ) a1);
+    case SYS_user_ccwd:
+      return sys_user_ccwd((uint64 ) a1);
     default:
       panic("Unknown syscall %ld \n", a0);
   }

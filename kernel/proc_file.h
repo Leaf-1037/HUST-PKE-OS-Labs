@@ -35,6 +35,9 @@ typedef struct proc_file_management_t {
 
 proc_file_management *init_proc_file_management(void);
 
+// Added @lab4_challenge1
+void update_file_status_when_ccwd();
+
 void reclaim_proc_file_management(proc_file_management *pfiles);
 
 #endif

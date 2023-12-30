@@ -221,3 +221,13 @@ int do_link(char *oldpath, char *newpath) {
 int do_unlink(char *path) {
   return vfs_unlink(path);
 }
+
+// Added @lab4_challenge1
+
+void update_file_status_when_ccwd(){
+  // num_file_open -> 0 让打开的文件数量清零
+  current->pfiles->nfiles = 0;
+  for (int i = 0; i<MAX_FILES; ++i){
+    current->pfiles->opened_files[i].status = FD_NONE;
+  }
+}
