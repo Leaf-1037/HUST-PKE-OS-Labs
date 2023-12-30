@@ -1,0 +1,2 @@
+该目录路径应该为 /RISCV/riscv64-elf-gcc/ , 否则 openocd 可能会找不到文件.
+
