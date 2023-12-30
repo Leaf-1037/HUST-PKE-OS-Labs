@@ -62,19 +62,19 @@ ssize_t print_user_backtrace(int64 depth){
 
   // }
 
-  uint64 user_sp = current->trapframe->regs.sp + 16 + 8;
-  int64 cur_depth = 0;
-  for (uint64 cur_p = user_sp; cur_depth <= depth; cur_p += 16) {
+  uint64 reg_user_sp = current->trapframe->regs.sp + 16 + 8;
+  int64 current_depth = 0;
+  for (uint64 cur_p = reg_user_sp; current_depth <= depth; cur_p += 16) {
     uint64 ra = *(uint64 *) cur_p;
     if (ra == 0) break;// * 到达用户栈底
     // * 追踪符号
     uint64 tmp = 0;
     int symbol_idx = -1;
     // sprint("ra: %x\n", ra);
-    for (int i = 0; i < elf_loader.symbol_cnt; i++) {
-      if (elf_loader.symbols[i].st_info == STT_FUNC && elf_loader.symbols[i].st_value < ra && elf_loader.symbols[i].st_value > tmp) {
-        tmp = elf_loader.symbols[i].st_value;
-        symbol_idx = i;
+    for (int idx = 0; idx < elf_loader.symbol_cnt; ++idx) {
+      if (elf_loader.symbols[idx].st_info == STT_FUNC && elf_loader.symbols[idx].st_value < ra && elf_loader.symbols[idx].st_value > tmp) {
+        tmp = elf_loader.symbols[idx].st_value;
+        symbol_idx = idx;
       }
     }
     //sprint("Symbol_idx: %d %x depth=%d\n", symbol_idx, elf_loader.symbols[symbol_idx].st_value,depth);
@@ -87,7 +87,7 @@ ssize_t print_user_backtrace(int64 depth){
     } else {
       sprint("failed to backtrace symbol %lx\n", ra);
     }
-    cur_depth++;
+    current_depth++;
   }
   return 0;
 }

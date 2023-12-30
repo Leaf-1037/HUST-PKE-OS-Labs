@@ -52,7 +52,7 @@ int exit(int code) {
 }
 
 
-// Added @lab1_challenge1
+// Added @lab1_challenge1.
 int print_backtrace(int depth){
   return do_user_call(SYS_print_user_backtrace,depth,0,0,0,0,0,0);
 }

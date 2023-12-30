@@ -122,6 +122,7 @@ void load_bincode_from_host_elf(process *p) {
   elf_info info;
 
   info.f = spike_file_open(arg_bug_msg.argv[0], O_RDONLY, 0);
+
   info.p = p;
   // IS_ERR_VALUE is a macro defined in spike_interface/spike_htif.h
   if (IS_ERR_VALUE(info.f)) panic("Fail on openning the input application program.\n");
@@ -155,10 +156,13 @@ elf_status get_elf_symbol(elf_ctx *t){
   int strtab_length = 0;
   // load symbol_table & string_table
   for (int i=0, offset_ctx=t->ehdr.shoff; i<t->ehdr.shnum;++i, offset_ctx += ELF_SECTION_HEADER_SIZE){
+    // 如果读错直接返回
     if (elf_fpread(t, &h,sizeof(h),offset_ctx)!=sizeof(h)) return EL_EIO;
+
     if (h.sh_type == SHT_SYMTAB){ // 加载.symtab节
       if (elf_fpread(t, &t->symbols, h.sh_size, h.sh_offset) != h.sh_size)
         return EL_EIO;
+      // 得到symbol个数
       t->symbol_cnt = h.sh_size / ELF_SYMBOL_SIZE;
     }
     else if (h.sh_type == SHT_STRTAB){

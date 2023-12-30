@@ -119,7 +119,7 @@ typedef enum elf_status_t {
 //   uint16_t      e_shstrndx;
 // } ElfN_Ehdr;
 
-// ! ref: https://man7.org/linux/man-pages/man5/elf.5.html
+// elf节头信息
 // section header structure
 typedef struct elf_section_header_t {
   uint32 sh_name;      /* Section name */
@@ -129,17 +129,17 @@ typedef struct elf_section_header_t {
   uint64 sh_offset;    /* Section offset of file */
   uint64 sh_size;      /* Section's size in bytes */
   uint32 sh_link;      /* Section header table link which links to another section */
-  uint32 sh_info;      /* Extra information */
+  uint32 sh_info;
   uint64 sh_addralign; /* Section address alignment constrainents */
   uint64 sh_entsize;   /* Entry size in bytes if section holds table */
 } elf_section_header;
 
-// ! ref: https://man7.org/linux/man-pages/man5/elf.5.html
+// elf符号信息
 // string and symbol tables structure
 typedef struct elf_symbol_t {
   uint32 st_name;  /* Symbol names if nonzero */
   unsigned char st_info;  /* Symbol's type and binding attributes */
-  unsigned char st_other; /* Symbol visibility */
+  unsigned char st_other; 
   uint16 st_shndx; /* Symbol section header table index */
   uint64 st_value; /* Symbol value */
   uint64 st_size;  /* Symbol size */
