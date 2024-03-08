@@ -46,7 +46,6 @@ void handle_mtrap() {
       // interception, and finish lab1_2.
       //panic( "call handle_illegal_instruction to accomplish illegal instruction interception for lab1_2.\n" );
       handle_illegal_instruction();
-
       break;
     case CAUSE_MISALIGNED_LOAD:
       handle_misaligned_load();
