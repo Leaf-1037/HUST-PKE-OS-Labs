@@ -11,6 +11,10 @@
 #include "spike_interface/spike_utils.h"
 #include "util/functions.h"
 
+struct MCB_t *MCB_head = NULL;  //MCB链表头
+uint64 pt_top_va=USER_FREE_ADDRESS_START; //页表的顶部地址
+uint64 first_malloc = 1;  // 首次分配
+
 /* --- utility functions for virtual address mapping --- */
 //
 // establish mapping of virtual address [va, va+size] to phyiscal address [pa, pa+size]
@@ -191,5 +195,23 @@ void user_vm_unmap(pagetable_t page_dir, uint64 va, uint64 size, int free) {
   pte=page_walk(page_dir,va,0);
   free_page((void*)(((*pte)>>10)<<12));
   *pte= *pte & (~PTE_V);
+
+}
+
+void init_MCBs(){
+  if (first_malloc){
+    uint64 va_=cur_mapping;
+    malloc_mapping(sizeof(MCB));
+    pte_t *pte = page_walk(current->pagetable,USER_FREE_ADDRESS_START,0);
+    MCB_head=(MCB*)PTE2PA(*pte);
+    MCB_head->m_stat = 0;
+    MCB_head->m_startaddr = *pte+(sizeof(MCB));
+    MCB_head->m_size = 0;
+    MCB_head->next=NULL;
+    first_malloc=0;
+  }
+}
+
+void malloc_mapping(uint64 n){
 
 }
