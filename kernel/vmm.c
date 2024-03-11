@@ -10,6 +10,7 @@
 #include "util/string.h"
 #include "spike_interface/spike_utils.h"
 #include "util/functions.h"
+#include "process.h"
 
 struct MCB_t *MCB_head = NULL;  //MCB链表头
 uint64 pt_top_va=USER_FREE_ADDRESS_START; //页表的顶部地址
@@ -200,11 +201,11 @@ void user_vm_unmap(pagetable_t page_dir, uint64 va, uint64 size, int free) {
 
 void init_MCBs(){
   if (first_malloc){
-    uint64 va_=cur_mapping;
+    uint64 va_=pt_top_va;
     malloc_mapping(sizeof(MCB));
     pte_t *pte = page_walk(current->pagetable,USER_FREE_ADDRESS_START,0);
     MCB_head=(MCB*)PTE2PA(*pte);
-    MCB_head->m_stat = 0;
+    MCB_head->m_state = 0;
     MCB_head->m_startaddr = *pte+(sizeof(MCB));
     MCB_head->m_size = 0;
     MCB_head->next=NULL;
@@ -213,5 +214,51 @@ void init_MCBs(){
 }
 
 void malloc_mapping(uint64 n){
+  uint64 tmp=ROUNDUP(pt_top_va,PGSIZE);
+  for (uint64 i=tmp;i<pt_top_va+n;i+=PGSIZE){
+    char* new_mem_alloc = (char*)alloc_page();
+    memset(new_mem_alloc,0,PGSIZE);
+    map_pages(current->pagetable,tmp,PGSIZE,(uint64)new_mem_alloc,prot_to_type(PROT_READ | PROT_WRITE,1));
+  }
+  pt_top_va+=n;//进入下一段
+  return;
+}
 
+uint64 user_better_malloc(uint64 n){
+  init_MCBs();
+  MCB* tmp = (MCB*)MCB_head;
+  for(;;){
+    // 查找合适的块
+    if (tmp->m_size>=n && tmp->m_state == 0){
+      tmp->m_state=1;
+      return tmp->m_startaddr;
+    }
+    if (!(tmp->next)) break;
+    tmp=tmp->next;
+  }
+  uint64 top_heap = pt_top_va;//堆顶
+  malloc_mapping(sizeof(MCB)+n);
+  // 确定对齐后下一地址
+  pte_t *pte=page_walk(current->pagetable,top_heap,0);
+  MCB* mcb = (MCB*)(PTE2PA(*pte)+(top_heap&0xfff));
+  uint64 addr_mcb = (uint64)mcb;
+  uint64 addr_aligned = (addr_mcb)+8-(uint64)addr_mcb % 8;
+  mcb = (MCB*)addr_aligned;
+  // 分配
+  mcb->m_state=1;
+  mcb->m_startaddr=top_heap+sizeof(MCB);
+  mcb->m_size=n;
+  // 插入
+  mcb->next=tmp->next;
+  tmp->next=mcb;
+  return mcb->m_startaddr;
+}
+
+// 消去
+void user_better_free(void *addr){
+  uint64 origin_addr = (uint64)addr-sizeof(MCB);
+  pte_t *pte=page_walk(current->pagetable,origin_addr,0);
+  MCB* tmp=(MCB*)(PTE2PA(*pte)+(origin_addr&0xfff));
+  tmp=(MCB*)((uint64)tmp + 8 - ((uint64)tmp % 8));
+  tmp->m_state = 0;
 }

@@ -3,6 +3,14 @@
 
 #include "riscv.h"
 
+// Memory Control Block
+typedef struct MCB_t{
+  uint64 m_state;// isUsed
+  uint64 m_startaddr; // 主存起始位置
+  uint64 m_size; // 大小
+  struct MCB_t *next;
+}MCB;
+
 /* --- utility functions for virtual address mapping --- */
 int map_pages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm);
 // permission codes.
@@ -30,5 +38,11 @@ void kern_vm_init(void);
 void *user_va_to_pa(pagetable_t page_dir, void *va);
 void user_vm_map(pagetable_t page_dir, uint64 va, uint64 size, uint64 pa, int perm);
 void user_vm_unmap(pagetable_t page_dir, uint64 va, uint64 size, int free);
+
+// added @lab2_challenge2
+void init_MCBs();
+void malloc_mapping(uint64 n);
+uint64 user_better_malloc(uint64 n);
+void user_better_free(void *addr);
 
 #endif
