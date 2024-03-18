@@ -206,7 +206,7 @@ void init_MCBs(){
     pte_t *pte = page_walk(current->pagetable,USER_FREE_ADDRESS_START,0);
     MCB_head=(MCB*)PTE2PA(*pte);
     MCB_head->m_state = 0;
-    MCB_head->m_startaddr = *pte+(sizeof(MCB));
+    MCB_head->m_startaddr = *pte + (sizeof(MCB));
     MCB_head->m_size = 0;
     MCB_head->next=NULL;
     first_malloc=0;
@@ -226,6 +226,7 @@ void malloc_mapping(uint64 n){
 
 uint64 user_better_malloc(uint64 n){
   init_MCBs();
+  //sprint("%d\n", sizeof(MCB_head->next));
   MCB* tmp = (MCB*)MCB_head;
   for(;;){
     // 查找合适的块

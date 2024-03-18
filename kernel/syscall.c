@@ -45,7 +45,7 @@ uint64 sys_user_allocate_page() {
   g_ufree_page += PGSIZE;
   user_vm_map((pagetable_t)current->pagetable, va, PGSIZE, (uint64)pa,
          prot_to_type(PROT_WRITE | PROT_READ, 1));
-
+  
   return va;
 }
 
@@ -54,6 +54,21 @@ uint64 sys_user_allocate_page() {
 //
 uint64 sys_user_free_page(uint64 va) {
   user_vm_unmap((pagetable_t)current->pagetable, va, PGSIZE, 1);
+  return 0;
+}
+
+// added @lab2_challenge2
+int flag = 0;// 0: not initialized, 1: initialized
+uint64 sys_user_better_malloc(uint64 n) {
+  if (flag == 0) {
+    init_MCBs();
+    flag = 1;
+  }
+  return (uint64)user_better_malloc(n);
+}
+
+uint64 sys_user_better_free(void* addr) {
+  user_better_free((void*)addr);
   return 0;
 }
 
@@ -69,9 +84,16 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
       return sys_user_exit(a1);
     // added @lab2_2
     case SYS_user_allocate_page:
-      return sys_user_allocate_page();
+      // return sys_user_allocate_page();
+      return sys_user_better_malloc(a1);
     case SYS_user_free_page:
-      return sys_user_free_page(a1);
+      // return sys_user_free_page(a1);
+      return sys_user_better_free((void*)a1);
+    // added @lab2_challenge2
+    case SYS_user_better_malloc:
+      return sys_user_better_malloc(a1);
+    case SYS_user_better_free:
+      return sys_user_better_free((void*)a1);
     default:
       panic("Unknown syscall %ld \n", a0);
   }
