@@ -106,4 +106,30 @@ int do_fork(process* parent);
 // current running process
 extern process* current;
 
+// // semaphore related
+// typedef struct {
+//   int sem_value;
+//   int is_used;
+//   process *sem_queue;
+//   process *waiting_queue_head;
+//   process *waiting_queue_tail;
+// } semaphore;
+
+// // initialize a semaphore
+// int sem_init(int value);
+
+// int sem_inc(int);
+// int sem_dec(int);
+
+// int sem_deinit(int);
+
+typedef struct {
+    int value, occupied;
+    process *wait_head, *wait_tail;
+} semaphore;
+int sem_init(int value);
+int sem_inc(int sem);
+int sem_dec(int sem);
+
+
 #endif

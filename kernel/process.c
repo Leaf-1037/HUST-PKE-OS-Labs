@@ -255,3 +255,110 @@ int do_fork( process* parent)
 
   return child->pid;
 }
+
+semaphore sems[NPROC];
+int sem_init(int value) {
+    for (int i = 0; i < NPROC; i++)
+        if (! sems[i].occupied) {
+            sems[i].occupied = 1; sems[i].value = value;
+            sems[i].wait_head = sems[i].wait_tail = 0; return i;
+        }
+    return -1;
+}
+int sem_inc(int sem) {
+    if (sem < 0 || sem >= NPROC) return -1;
+    sems[sem].value++;
+    if (sems[sem].wait_head) {
+        process *t = sems[sem].wait_head;
+        sems[sem].wait_head = t->queue_next;
+        if (t->queue_next == 0) sems[sem].wait_tail = 0;
+        insert_to_ready_queue(t);
+    }
+    return 0;
+}
+int sem_dec(int sem) {
+    if (sem < 0 || sem >= NPROC) return -1;
+    sems[sem].value--;
+    if (sems[sem].value < 0) {
+        if (sems[sem].wait_head == 0) {
+            sems[sem].wait_head = sems[sem].wait_tail = current;
+            current->queue_next = 0;
+        } else {
+            sems[sem].wait_tail->queue_next = current->queue_next;
+            sems[sem].wait_tail = current;
+        }
+        current->status = BLOCKED; schedule();
+    }
+    return 0;
+}
+
+// semaphore sems[NPROC];
+
+// int sem_init(int value){
+//   for (int i=0;i<NPROC;++i){
+//     if (sems[i].is_used==0){
+//       sems[i].is_used = 1; // put used_bit = 1
+//       sems[i].sem_value = value;
+//       sems[i].waiting_queue_head = NULL;
+//       sems[i].waiting_queue_tail = NULL;
+//       return i;
+//     }
+//   }
+//   return -1;
+// }
+
+// process* remove_from_waiting_queue(int sem_id){
+//   process* proc = sems[sem_id].waiting_queue_head;
+//   if (proc){
+//     sems[sem_id].waiting_queue_head = proc->queue_next;
+//     if(proc->queue_next == NULL) sems[sem_id].waiting_queue_tail = NULL;
+//   }
+//   return proc;
+// }
+
+
+
+// int sem_inc(int sem_id){
+//   if (sem_id<0 || sem_id>=NPROC){
+//     return -1;
+//   }
+//   sems[sem_id].sem_value++;
+//   // if there are processes waiting for the semaphore, wake up one of them
+//   if (sems[sem_id].waiting_queue_head){
+//     process* proc = sems[sem_id].waiting_queue_head;
+//     sems[sem_id].waiting_queue_head = proc->queue_next;
+//     if (proc->queue_next){
+//       // proc->status = READY;
+//       sems[sem_id].waiting_queue_tail=NULL;
+//     }
+//     insert_to_ready_queue(proc);
+//   }
+//   return 0;
+// }
+// int sem_dec(int sem_id){
+//   if (sem_id<0 || sem_id>=NPROC){
+//     return -1;
+//   }
+//   sems[sem_id].sem_value--;
+//   if (sems[sem_id].sem_value<0){
+//     // current->status = BLOCKED;
+//     // 
+//     process* p = sems[sem_id].waiting_queue_head;
+//     if (p==NULL){
+//       sems[sem_id].waiting_queue_head = sems[sem_id].waiting_queue_tail = current;
+//       current->queue_next = NULL;
+//     }else{
+//       // while (p->queue_next){
+//       //   p = p->queue_next;
+//       // }
+//       // p->queue_next = current->queue_next;
+//       sems[sem_id].waiting_queue_tail->queue_next = current->queue_next;
+//       sems[sem_id].waiting_queue_tail = current;
+//     }
+//     current->status = BLOCKED;
+//     schedule();
+//   }
+//   return 0;
+// }
+
+// // int sem_deinit(int);
