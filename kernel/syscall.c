@@ -107,11 +107,11 @@ ssize_t sys_user_sem_init(uint64 a1){
 }
 
 ssize_t sys_user_sem_P(uint64 a1){
-  return sem_inc(a1);
+  return sem_dec(a1);
 }
 
 ssize_t sys_user_sem_V(uint64 a1){
-  return sem_dec(a1);
+  return sem_inc(a1);
 }
 
 
