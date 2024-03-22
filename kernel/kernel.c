@@ -16,11 +16,37 @@
 #include "rfs.h"
 #include "ramdev.h"
 
+// added @lab4_challenge2
+#include "util/types.h"
+
 //
 // trap_sec_start points to the beginning of S-mode trap segment (i.e., the entry point of
 // S-mode trap vector). added @lab2_1
 //
 extern char trap_sec_start[];
+
+
+//
+// returns the number (should be 1) of string(s) after PKE kernel in command line.
+// and store the string(s) in arg_bug_msg.
+//
+static size_t parse_args(arg_buf *arg_bug_msg) {
+  // HTIFSYS_getmainvars frontend call reads command arguments to (input) *arg_bug_msg
+  long r = frontend_syscall(HTIFSYS_getmainvars, (uint64)arg_bug_msg,
+      sizeof(*arg_bug_msg), 0, 0, 0, 0, 0);
+  kassert(r == 0);
+
+  size_t pk_argc = arg_bug_msg->buf[0];
+  uint64 *pk_argv = &arg_bug_msg->buf[1];
+
+  int arg = 1;  // skip the PKE OS kernel string, leave behind only the application name
+  for (size_t i = 0; arg + i < pk_argc; i++)
+    arg_bug_msg->argv[i] = (char *)(uintptr_t)pk_argv[arg + i];
+
+  //returns the number of strings after PKE kernel in command line
+  return pk_argc - arg;
+}
+
 
 //
 // turn on paging. added @lab2_1
@@ -37,14 +63,43 @@ void enable_paging() {
 // load the elf, and construct a "process" (with only a trapframe).
 // load_bincode_from_host_elf is defined in elf.c
 //
-process* load_user_program() {
+// process* load_user_program() {
+//   process* proc;
+
+//   proc = alloc_process();
+//   sprint("User application is loading.\n");
+
+//   load_bincode_from_host_elf(proc);
+  
+//   return proc;
+// }
+
+// added @lab4_challenge2
+process* load_user_program(char* phy_filename) {
   process* proc;
 
   proc = alloc_process();
   sprint("User application is loading.\n");
 
-  load_bincode_from_host_elf(proc);
+  load_bincode_from_host_elf(proc, phy_filename);
+  
   return proc;
+}
+
+process* load_user_program_arg(){
+  process* proc;
+
+  proc = alloc_process();
+  sprint("User application is loading.\n");
+
+  // parse args
+  arg_buf msg;
+  parse_args(&msg);
+
+  load_bincode_from_host_elf(proc, msg.argv[0]);
+  
+  return proc;
+
 }
 
 //
@@ -77,7 +132,7 @@ int s_start(void) {
   sprint("Switch to user mode...\n");
   // the application code (elf) is first loaded into memory, and then put into execution
   // added @lab3_1
-  insert_to_ready_queue( load_user_program() );
+  insert_to_ready_queue( load_user_program_arg() );
   schedule();
 
   // we should never reach here.

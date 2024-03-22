@@ -221,3 +221,14 @@ int do_link(char *oldpath, char *newpath) {
 int do_unlink(char *path) {
   return vfs_unlink(path);
 }
+
+// added @lab4_challenge2
+// switch to a new process image
+//
+int do_exec(char *pfn){
+  process *proc = load_user_program(pfn);
+  if (proc == NULL) return -1;
+  current->status = ZOMBIE;
+  switch_to(proc);
+  return 0;
+}

@@ -6,6 +6,12 @@
 
 #define MAX_CMDLINE_ARGS 64
 
+// added @lab4_challenge2, originally in "elf.c"
+typedef union {
+  uint64 buf[MAX_CMDLINE_ARGS];
+  char *argv[MAX_CMDLINE_ARGS];
+} arg_buf;
+
 // elf header structure
 typedef struct elf_header_t {
   uint32 magic;
@@ -63,6 +69,8 @@ typedef struct elf_ctx_t {
 elf_status elf_init(elf_ctx *ctx, void *info);
 elf_status elf_load(elf_ctx *ctx);
 
-void load_bincode_from_host_elf(process *p);
+// void load_bincode_from_host_elf(process *p);
+// added @lab4_challenge2
+void load_bincode_from_host_elf(process *p, char *pfn);
 
 #endif

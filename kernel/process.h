@@ -107,6 +107,9 @@ int free_process( process* proc );
 // fork a child from parent
 int do_fork(process* parent);
 
+// added @lab4_challenge2
+extern process* load_user_program(char *vfn);
+
 // current running process
 extern process* current;
 
