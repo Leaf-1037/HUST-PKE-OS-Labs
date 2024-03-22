@@ -6,6 +6,9 @@
 #include "memlayout.h"
 #include "spike_interface/spike_utils.h"
 
+// added @lab2_challenge3
+#include "sync_utils.h"
+
 // _end is defined in kernel/kernel.lds, it marks the ending (virtual) address of PKE kernel
 extern char _end[];
 // g_mem_size is defined in spike_interface/spike_memory.c, it indicates the size of our
@@ -50,13 +53,21 @@ void free_page(void *pa) {
 // takes the first free page from g_free_mem_list, and returns (allocates) it.
 // Allocates only ONE page!
 //
-void *alloc_page(void) {
-  list_node *n = g_free_mem_list.next;
-  uint64 hartid = 0;
+
+// modified @lab2_challenge3
+int locker= 0;  //同步锁
+void *alloc_page(void)
+ {
+  list_node *n = NULL;
+  uint64 hartid = read_tp();
+  spin_lock(&locker);
+  n = g_free_mem_list.next;
+
   if (vm_alloc_stage[hartid]) {
     sprint("hartid = %ld: alloc page 0x%x\n", hartid, n);
   }
   if (n) g_free_mem_list.next = n->next;
+  spin_unlock(&locker);
   return (void *)n;
 }
 

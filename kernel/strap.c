@@ -65,7 +65,7 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       // panic( "You need to implement the operations that actually handle the page fault in lab2_3.\n" );
       // int map_pages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm);
       //map_pages(current->pagetable,ROUNDDOWN)
-      map_pages(current->pagetable, ROUNDDOWN(stval,PGSIZE), PGSIZE, (uint64)alloc_page(),prot_to_type(PROT_READ|PROT_WRITE,1));
+      map_pages(current[read_tp()]->pagetable, ROUNDDOWN(stval,PGSIZE), PGSIZE, (uint64)alloc_page(),prot_to_type(PROT_READ|PROT_WRITE,1));
       break;
     default:
       sprint("unknown page fault.\n");
@@ -83,9 +83,9 @@ void smode_trap_handler(void) {
   // we will consider other previous case in lab1_3 (interrupt).
   if ((read_csr(sstatus) & SSTATUS_SPP) != 0) panic("usertrap: not from user mode");
 
-  assert(current);
+  assert(current[read_tp()]);
   // save user process counter.
-  current->trapframe->epc = read_csr(sepc);
+  current[read_tp()]->trapframe->epc = read_csr(sepc);
 
   // if the cause of trap is syscall from user application.
   // read_csr() and CAUSE_USER_ECALL are macros defined in kernel/riscv.h
@@ -94,7 +94,7 @@ void smode_trap_handler(void) {
   // use switch-case instead of if-else, as there are many cases since lab2_3.
   switch (cause) {
     case CAUSE_USER_ECALL:
-    handle_syscall(current->trapframe);
+    handle_syscall(current[read_tp()]->trapframe);
       break;
     case CAUSE_MTIMER_S_TRAP:
     handle_mtimer_trap();
@@ -113,5 +113,5 @@ void smode_trap_handler(void) {
   }
 
   // continue (come back to) the execution of current process.
-  switch_to(current);
+  switch_to(current[read_tp()]);
 }

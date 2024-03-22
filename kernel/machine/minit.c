@@ -7,6 +7,10 @@
 #include "kernel/config.h"
 #include "spike_interface/spike_utils.h"
 
+// stack0 is defined in kernel/machine/minit.c, and is used as the stack of the proxy kernel
+// Added @lab2_challenge3
+#include "kernel/sync_utils.h"
+
 //
 // global variables are placed in the .data section.
 // stack0 is the privilege mode stack(s) of the proxy kernel on CPU(s)
@@ -90,17 +94,24 @@ void timerinit(uintptr_t hartid) {
 //
 // m_start: machine mode C entry point.
 //
+
+int counter = 0;
 void m_start(uintptr_t hartid, uintptr_t dtb) {
   // init the spike file interface (stdin,stdout,stderr)
   // functions with "spike_" prefix are all defined in codes under spike_interface/,
   // sprint is also defined in spike_interface/spike_utils.c
-  spike_file_init();
+  // spike_file_init();
+  if (hartid == 0) {
+    spike_file_init();
+    init_dtb(dtb);
+  }
+  sync_barrier(&counter, NCPU);
   sprint("In m_start, hartid:%d\n", hartid);
 
   // init HTIF (Host-Target InterFace) and memory by using the Device Table Blob (DTB)
   // init_dtb() is defined above.
-  init_dtb(dtb);
-
+  // init_dtb(dtb);
+  write_tp(hartid);
   // save the address of trap frame for interrupt in M mode to "mscratch". added @lab1_2
   write_csr(mscratch, &g_itrframe);
 
