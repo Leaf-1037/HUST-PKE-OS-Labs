@@ -22,7 +22,7 @@ extern char smode_trap_vector[];
 extern void return_to_user(trapframe *, uint64 satp);
 
 // current points to the currently running user-mode application.
-process* current[NCPU] = {NULL};
+process* current[NCPU];// = {NULL};
 
 // points to the first free page in our simple heap. added @lab2_2
 uint64 g_ufree_page[NCPU];// = USER_FREE_ADDRESS_START;

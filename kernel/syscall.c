@@ -41,6 +41,8 @@ ssize_t sys_user_exit(uint64 code) {
 
   // added @lab2_challenge3
   // 同步
+  // uint64 hart_id = read_tp();
+
   sync_barrier(&counter_, NCPU);
   if (current[read_tp()]->id == 0) {
     sprint("hartid = %d: shutdown with code:%d.\n",current[read_tp()]->id, code);
@@ -53,6 +55,8 @@ ssize_t sys_user_exit(uint64 code) {
 // maybe, the simplest implementation of malloc in the world ... added @lab2_2
 //
 uint64 sys_user_allocate_page() {
+  // uint64 hart_id = read_tp();
+
   void* pa = alloc_page();
   uint64 va = g_ufree_page[read_tp()];
   g_ufree_page[read_tp()] += PGSIZE;

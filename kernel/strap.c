@@ -83,9 +83,12 @@ void smode_trap_handler(void) {
   // we will consider other previous case in lab1_3 (interrupt).
   if ((read_csr(sstatus) & SSTATUS_SPP) != 0) panic("usertrap: not from user mode");
 
-  assert(current[read_tp()]);
+
+  // added @lab2_c3
+  int cpu_id = read_tp();
+  assert(current[cpu_id]);
   // save user process counter.
-  current[read_tp()]->trapframe->epc = read_csr(sepc);
+  current[cpu_id]->trapframe->epc = read_csr(sepc);
 
   // if the cause of trap is syscall from user application.
   // read_csr() and CAUSE_USER_ECALL are macros defined in kernel/riscv.h
@@ -94,7 +97,7 @@ void smode_trap_handler(void) {
   // use switch-case instead of if-else, as there are many cases since lab2_3.
   switch (cause) {
     case CAUSE_USER_ECALL:
-    handle_syscall(current[read_tp()]->trapframe);
+    handle_syscall(current[cpu_id]->trapframe);
       break;
     case CAUSE_MTIMER_S_TRAP:
     handle_mtimer_trap();
@@ -113,5 +116,5 @@ void smode_trap_handler(void) {
   }
 
   // continue (come back to) the execution of current process.
-  switch_to(current[read_tp()]);
+  switch_to(current[cpu_id]);
 }

@@ -39,7 +39,8 @@ void enable_paging() {
 // load_bincode_from_host_elf is defined in elf.c
 //
 void load_user_program(process *proc) {
-  proc->id = read_tp();
+  uint64 tmp_id = read_tp();
+  proc->id = tmp_id;
   sprint("User application is loading.\n");
   // allocate a page to store the trapframe. alloc_page is defined in kernel/pmm.c. added @lab2_1
   proc->trapframe = (trapframe *)alloc_page();
@@ -56,7 +57,7 @@ void load_user_program(process *proc) {
   // USER_STACK_TOP = 0x7ffff000, defined in kernel/memlayout.h
   proc->trapframe->regs.sp = USER_STACK_TOP;  //virtual address of user stack top
 
-  sprint("hartid = %d: user frame 0x%lx, user stack 0x%lx, user kstack 0x%lx \n",read_tp(), proc->trapframe,
+  sprint("hartid = %d: user frame 0x%lx, user stack 0x%lx, user kstack 0x%lx \n",tmp_id, proc->trapframe,
          proc->trapframe->regs.sp, proc->kstack);
 
   // load_bincode_from_host_elf() is defined in kernel/elf.c
@@ -88,7 +89,7 @@ int counter = 0;
 
 int s_start(void) {
   uint64 id=read_tp();
-  sprint("hartid = %d: Enter supervisor mode...\n",read_tp());
+  sprint("hartid = %d: Enter supervisor mode...\n",id);
   // in the beginning, we use Bare mode (direct) memory mapping as in lab1.
   // but now, we are going to switch to the paging mode @lab2_1.
   // note, the code still works in Bare mode when calling pmm_init() and kern_vm_init().
