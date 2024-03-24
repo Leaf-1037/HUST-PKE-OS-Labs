@@ -95,7 +95,7 @@ void timerinit(uintptr_t hartid) {
 // m_start: machine mode C entry point.
 //
 
-int counter = 0;
+int counter_1 = 0;
 void m_start(uintptr_t hartid, uintptr_t dtb) {
   // init the spike file interface (stdin,stdout,stderr)
   // functions with "spike_" prefix are all defined in codes under spike_interface/,
@@ -105,7 +105,7 @@ void m_start(uintptr_t hartid, uintptr_t dtb) {
     spike_file_init();
     init_dtb(dtb);
   }
-  sync_barrier(&counter, NCPU);
+  sync_barrier(&counter_1, NCPU);
   sprint("In m_start, hartid:%d\n", hartid);
 
   // init HTIF (Host-Target InterFace) and memory by using the Device Table Blob (DTB)

@@ -33,7 +33,7 @@ ssize_t sys_user_print(const char* buf, size_t n) {
 // implement the SYS_user_exit syscall
 //
 // modified @lab2_challenge3
-int counter_ = 0;
+int counter_3 = 0;
 ssize_t sys_user_exit(uint64 code) {
   sprint("hartid = %d: User exit with code:%d.\n",current[read_tp()]->id, code);
   // in lab1, PKE considers only one app (one process). 
@@ -43,7 +43,7 @@ ssize_t sys_user_exit(uint64 code) {
   // 同步
   // uint64 hart_id = read_tp();
 
-  sync_barrier(&counter_, NCPU);
+  sync_barrier(&counter_3, NCPU);
   if (current[read_tp()]->id == 0) {
     sprint("hartid = %d: shutdown with code:%d.\n",current[read_tp()]->id, code);
     shutdown(code);
@@ -60,8 +60,7 @@ uint64 sys_user_allocate_page() {
   void* pa = alloc_page();
   uint64 va = g_ufree_page[read_tp()];
   g_ufree_page[read_tp()] += PGSIZE;
-  user_vm_map((pagetable_t)current[read_tp()]->pagetable, va, PGSIZE, (uint64)pa,
-         prot_to_type(PROT_WRITE | PROT_READ, 1));
+  user_vm_map((pagetable_t)current[read_tp()]->pagetable, va, PGSIZE, (uint64)pa, prot_to_type(PROT_WRITE | PROT_READ, 1));
   sprint("hartid = %d: vaddr 0x%x is mapped to paddr 0x%x\n",read_tp(), va, pa);
   return va;
 }

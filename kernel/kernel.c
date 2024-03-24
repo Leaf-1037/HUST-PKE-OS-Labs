@@ -39,6 +39,7 @@ void enable_paging() {
 // load_bincode_from_host_elf is defined in elf.c
 //
 void load_user_program(process *proc) {
+  // tmp_id: id for this cpu
   uint64 tmp_id = read_tp();
   proc->id = tmp_id;
   sprint("User application is loading.\n");

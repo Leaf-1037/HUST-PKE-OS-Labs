@@ -85,7 +85,7 @@ void smode_trap_handler(void) {
 
 
   // added @lab2_c3
-  int cpu_id = read_tp();
+  uint64 cpu_id = read_tp();
   assert(current[cpu_id]);
   // save user process counter.
   current[cpu_id]->trapframe->epc = read_csr(sepc);

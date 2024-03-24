@@ -61,6 +61,8 @@ void *alloc_page(void)
   list_node *n = NULL;
   uint64 hartid = read_tp();
   spin_lock(&locker);
+
+  
   n = g_free_mem_list.next;
 
   if (vm_alloc_stage[hartid]) {
