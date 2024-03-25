@@ -6,6 +6,8 @@
 #include "spike_interface/spike_utils.h"
 
 process* ready_queue_head = NULL;
+// added @lab4_challenge3
+process* waiting_queue_head=NULL;
 
 //
 // insert a process, proc, into the END of ready queue.
@@ -30,6 +32,37 @@ void insert_to_ready_queue( process* proc ) {
   if( p==proc ) return;
   p->queue_next = proc;
   proc->status = READY;
+  proc->queue_next = NULL;
+
+  return;
+}
+
+// added @lab4_challenge3
+//
+// insert a process, proc, into the END of waiting queue.
+//
+void insert_to_waiting_queue(process* proc){
+  sprint( "going to insert process %d to wait queue.\n", proc->pid );
+  // if the queue is empty in the beginning
+  if( waiting_queue_head == NULL ){
+    proc->status = BLOCKED;
+    proc->queue_next = NULL;
+    waiting_queue_head = proc;
+    return;
+  }
+
+  // ready queue is not empty
+  process *p;
+  // browse the ready queue to see if proc is already in-queue
+  for( p=waiting_queue_head; p->queue_next!=NULL; p=p->queue_next )
+    if( p == proc ) return;  //already in queue
+
+  // p points to the last element of the ready queue
+  if( p==proc ) return;
+
+  // get back
+  p->queue_next = proc;
+  proc->status = BLOCKED;
   proc->queue_next = NULL;
 
   return;

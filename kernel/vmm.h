@@ -12,6 +12,8 @@ enum VMPermision {
   PROT_READ = 1,
   PROT_WRITE = 2,
   PROT_EXEC = 4,
+  // added @lab4_challenge3
+  PROT_COW = 8,
 };
 
 uint64 prot_to_type(int prot, int user);

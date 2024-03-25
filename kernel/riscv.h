@@ -4,6 +4,9 @@
 #include "util/types.h"
 #include "config.h"
 
+// added @lab4_challenge3
+#define ROUNDUP(a,b) ((((a)-1) / (b) + 1) * (b))
+
 // fields of mstatus, the Machine mode Status register
 #define MSTATUS_MPP_MASK (3L << 11) // previous mode mask
 #define MSTATUS_MPP_M (3L << 11)    // machine mode (m-mode)
@@ -198,6 +201,9 @@ static inline void flush_tlb(void) { asm volatile("sfence.vma zero, zero"); }
 #define PTE_G (1L << 5)  // global
 #define PTE_A (1L << 6)  // accessed
 #define PTE_D (1L << 7)  // dirty
+
+// added @lab4_challenge3
+#define PTE_C (1L << 8)  // COW
 
 // shift a physical address to the right place for a PTE.
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)

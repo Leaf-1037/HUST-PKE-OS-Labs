@@ -13,6 +13,8 @@
 
 #include "spike_interface/spike_utils.h"
 
+#include <string.h>
+
 //
 // handling the syscalls. will call do_syscall() defined in kernel/syscall.c
 //
@@ -65,8 +67,24 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       // panic( "You need to implement the operations that actually handle the page fault in lab2_3.\n" );
       // int map_pages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm);
       //map_pages(current->pagetable,ROUNDDOWN)
-      map_pages(current->pagetable, ROUNDDOWN(stval,PGSIZE), PGSIZE, (uint64)alloc_page(),prot_to_type(PROT_READ|PROT_WRITE,1));
-      break;
+      // map_pages(current->pagetable, ROUNDDOWN(stval,PGSIZE), PGSIZE, (uint64)alloc_page(),prot_to_type(PROT_READ|PROT_WRITE,1));
+      
+      // added @lab4_challenge3
+      {
+        pagetable_t p_directory = current->pagetable;
+        // get visual address
+        uint64 va = ROUNDDOWN(stval,PGSIZE);
+        pte_t *pte = page_walk(p_directory,va,1);
+        if (pte && (*pte &PTE_V) &&(*pte & PTE_C)){
+          void *pa=alloc_page();
+          memcpy(pa, (void *)lookup_pa(p_directory, va), PGSIZE);
+          *pte = (PTE_V | PA2PTE(pa) | prot_to_type(PROT_READ | PROT_WRITE, 1));//&(~PTE_C);
+          *pte =(*pte)&(~PTE_C);
+        }
+        else map_pages(p_directory, va, PGSIZE, (uint64)alloc_page(), prot_to_type(PROT_READ | PROT_WRITE, 1));
+        break;
+      }
+      // break;
     default:
       sprint("unknown page fault.\n");
       break;

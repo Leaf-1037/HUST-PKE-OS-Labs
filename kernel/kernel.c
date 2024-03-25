@@ -79,6 +79,30 @@ process* load_user_program() {
   return proc;
 }
 
+// added @lab4_challenge3
+int load_exec(char* cmd, char* params){
+  process_clear(current); // 刷新本进程
+  load_bincode_from_host_elf(current,cmd);
+
+  size_t *v_sp_pt = (size_t*)current->trapframe->regs.sp;
+  v_sp_pt = v_sp_pt-8;
+
+  size_t *sp_pt = (size_t*)user_va_to_pa(current->pagetable,(void*)v_sp_pt);
+  memcpy((char*)sp_pt, params, strlen(params)+1);
+
+  // get argv pointer
+  --v_sp_pt;
+  --sp_pt;
+
+  *sp_pt = (size_t)(1+v_sp_pt);
+
+  current->trapframe->regs.a1 = (uint64)v_sp_pt;
+  current->trapframe->regs.sp = (uint64)v_sp_pt;
+  current->trapframe->regs.a0 = (uint64)1;
+  return -1;
+
+}
+
 //
 // s_start: S-mode entry point of riscv-pke OS kernel.
 //

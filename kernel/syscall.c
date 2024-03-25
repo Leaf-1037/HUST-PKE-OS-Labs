@@ -17,6 +17,9 @@
 
 #include "spike_interface/spike_utils.h"
 
+// added @lab4_challenge3
+extern process procs[NPROC];
+
 //
 // implement the SYS_user_print syscall
 //
@@ -32,10 +35,17 @@ ssize_t sys_user_print(const char* buf, size_t n) {
 //
 // implement the SYS_user_exit syscall
 //
+
 ssize_t sys_user_exit(uint64 code) {
   sprint("User exit with code:%d.\n", code);
   // reclaim the current process, and reschedule. added @lab3_1
   free_process( current );
+  // added @lab4_challenge3
+  if (current->parent && current->parent->waiting_pid == current->pid){
+    // schedule
+    current->parent->status = READY;
+    insert_to_ready_queue(current->parent);
+  }
   schedule();
   return 0;
 }
@@ -113,10 +123,13 @@ ssize_t sys_user_open(char *pathva, int flags) {
 //
 // read file
 //
-ssize_t sys_user_read(int fd, char *bufva, uint64 count) {
+ssize_t sys_user_read(int fd, char *bufva, uint64 count) 
+
+{
   int i = 0;
   while (i < count) { // count can be greater than page size
     uint64 addr = (uint64)bufva + i;
+    // get physical address
     uint64 pa = lookup_pa((pagetable_t)current->pagetable, addr);
     uint64 off = addr - ROUNDDOWN(addr, PGSIZE);
     uint64 len = count - i < PGSIZE - off ? count - i : PGSIZE - off;
@@ -206,7 +219,8 @@ ssize_t sys_user_closedir(int fd){
 //
 // lib call to link
 //
-ssize_t sys_user_link(char * vfn1, char * vfn2){
+ssize_t sys_user_link(char * vfn1, char * vfn2)
+{
   char * pfn1 = (char*)user_va_to_pa((pagetable_t)(current->pagetable), (void*)vfn1);
   char * pfn2 = (char*)user_va_to_pa((pagetable_t)(current->pagetable), (void*)vfn2);
   return do_link(pfn1, pfn2);
@@ -218,6 +232,28 @@ ssize_t sys_user_link(char * vfn1, char * vfn2){
 ssize_t sys_user_unlink(char * vfn){
   char * pfn = (char*)user_va_to_pa((pagetable_t)(current->pagetable), (void*)vfn);
   return do_unlink(pfn);
+}
+
+// added @lab4_challenge3
+// 
+// lib call to exec
+//
+ssize_t sys_user_exec(char* cmd, char* params){
+  char *p_cmd = (char*)user_va_to_pa((pagetable_t)(current->pagetable),(void*)cmd);
+  char *p_params = (char*)user_va_to_pa((pagetable_t)(current->pagetable),(void*)params);
+  return load_exec(p_cmd,p_params);
+}
+//
+// lib call to wait
+//
+ssize_t sys_user_wait(int pid)
+{
+	if (pid == 0 || procs[pid].parent != current) return -1;
+  // 转调度
+	current->status=BLOCKED;
+	current->waiting_pid=pid;
+	schedule();
+	return pid;
 }
 
 //
@@ -268,6 +304,10 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
       return sys_user_link((char *)a1, (char *)a2);
     case SYS_user_unlink:
       return sys_user_unlink((char *)a1);
+    case SYS_user_exec:
+      return sys_user_exec((char* )a1,(char*)a2);
+    case SYS_user_wait:
+      return sys_user_wait((uint64)a1);
     default:
       panic("Unknown syscall %ld \n", a0);
   }
